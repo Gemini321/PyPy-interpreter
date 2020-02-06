@@ -20,7 +20,13 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 
 To be continued...
 
+## Progress
+
+| Date  |           Progress           |
+| :---: | :--------------------------: |
+| Feb 6 | Begin building the structure |
+
 ## Acknowledgement
 
-The design of this interpreter partly refers to Byterun by Allison Kaptur and Ned Batchelder. I learned the basic
-structure and principles of designing a Python interpreter from Byterun.
+The design of this interpreter partly refers to Byterun by Allison Kaptur and Ned Batchelder. From Byterun, I adopted the basic
+structure and principles of designing a Python interpreter.
