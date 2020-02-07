@@ -3,6 +3,9 @@
 """Acknowledgement: methods of parse_bytes_and__args, dispatch, operatiors and some details
 are adopted from Byterun, Allison Kaptur and Ned Batchelder, licensed by MIT License"""
 
+class VirtualMachineError(Exception):
+    """For raising errors in the operation of the VM"""
+    pass
 
 class VirtualMachine(object):
     def __init__(self):
@@ -28,7 +31,33 @@ class VirtualMachine(object):
         """Run the code and check if there any frame left after the code runs"""
         pass
 
-    # The following consist of frame manipulation and data stack manipulation
+    # The following methods consist of frame manipulation and data stack manipulation
+
+    # basic manipulation
+
+    def top(self):
+        """Return the value at the top of the stack"""
+        pass
+
+    def pop(self, i=0):
+        """Pop the ith value of the stack"""
+        pass
+
+    def popn(self, n):
+        """Pop the top n values of the stack. Deepest first"""
+        pass
+
+    def push(self, *vals):
+        """Push values into stack"""
+        pass
+
+    def peek(self, n):
+        """Get the nth entry from the bottom of the stack"""
+        pass
+
+    def jump(self, jump):
+        """Move the bytecode pointer to 'jump'"""
+        pass
 
     # Stack manipulation
 
@@ -39,21 +68,26 @@ class VirtualMachine(object):
         pass
 
     def byte_DUP_TOP(self):
+        """Copy the top entry of the stack and push it into the stack"""
         pass
 
     def byte_DUP_TOPX(self, count):
+        """Copy the top count entries of the stack and push them into the stack with the same order"""
         pass
 
     def byte_DUP_TOP_TWO(self):
         pass
 
     def byte_ROT_TWO(self):
+        """Insert the top entry to the second place"""
         pass
 
     def byte_ROT_THREE(self):
+        """Insert the top entry to the third place"""
         pass
 
     def byte_ROT_FOUR(self):
+        """Insert the top entry to the fourth place"""
         pass
 
     # Names
@@ -219,4 +253,90 @@ class VirtualMachine(object):
         pass
 
     def byte_UNPACK_SEQUENCE(self, count):
-        
+        """Unpack a sequence from the stack top, and push all the entries into the stack"""
+        pass
+
+    def byte_BUILD_SLICE(self, count):
+        """Build a slice with 'count' number of entries"""
+        pass
+
+    def byte_LIST_APPEND(self, count):
+        """Append the value at the top of the stack to a list from self.peek(count)"""
+        pass
+
+    def byte_SET_ADD(self, count):
+        """Add the value at the top of the stack to a set from self.peek(count)"""
+        pass
+
+    def byte_MAP_ADD(self, count):
+        """Add the value at the top of the stack to a map from self.peek(count)"""
+        pass
+
+    # Jumps
+
+    def byte_JUMP_FORWARD(self, jump):
+        self.jump(jump)
+
+    def byte_JUMP_ABSOLUTE(self, jump):
+        self.jump(jump)
+
+    def byte_POP_JUMP_IF_TRUE(self, jump):
+        """If the value at the top of the stack is true, jump to 'jump'"""
+        pass
+
+    def byte_POP_JUMP_IF_FALSE(self, jump):
+        pass
+
+    def byte_JUMP_IF_TRUE_OR_POP(self, jump):
+        """If the value at the top of the stack is true, jump; Or pop it"""
+        pass
+
+    def byte_JUMP_IF_FALSE_OR_POP(self, jump):
+        pass
+
+    # Blocks
+
+    def byte_SETUP_LOOP(self, dest):
+        """Setup the state of loop, including the dest of this loop"""
+        pass
+
+    def byte_GET_ITER(self):
+        """Make the top value as a lterator"""
+        pass
+
+    def byte_FOR_ITER(self, jump):
+        """Get the next entry of a lterator and push it into the stack(if possible)"""
+        pass
+
+    def byte_BREAK_LOOP(self):
+        return 'break'
+
+    def byte_CONTINUE_LOOP(self, dest):
+        self.return_value = dest
+        return 'continue'
+
+    def byte_SETUP_EXCEPT(self, dest):
+        pass
+
+    def byte_SETUP_FINALLY(self, dest):
+        pass
+
+    def byte_END_FINALLY(self):
+        pass
+
+    def byte_POP_BLOCK(self):
+        pass
+
+    # Raise
+
+    def byte_RAISE_VARARGS(self, argc):
+        """Raise with varargs"""
+        pass
+
+    def do_raise(self, exc, cause):
+        pass
+
+    def byte_POP_EXCEPT(self):
+        pass
+
+    # Functions(left out)
