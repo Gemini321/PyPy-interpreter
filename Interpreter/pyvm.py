@@ -3,9 +3,18 @@
 """Acknowledgement: methods of parse_bytes_and__args, dispatch, operatiors and some details
 are adopted from Byterun, Allison Kaptur and Ned Batchelder, licensed by MIT License"""
 
+from __future__ import print_function, division
+import dis
+import linecache
+import logging
+import operator
+import sys
+
+
 class VirtualMachineError(Exception):
-    """For raising errors in the operation of the VM"""
+    """For raising errors in the operation of the VirtualMachine"""
     pass
+
 
 class VirtualMachine(object):
     def __init__(self):
@@ -21,11 +30,71 @@ class VirtualMachine(object):
     def run_frame(self, frame):
         pass
 
-    def parse_bytes_and__args(self):
-        pass
+    def parse_byte_and_args(self):
+        """ Parse 1 - 3 bytes of bytecode into
+        an instruction and optionally arguments."""
+        f = self.frame
+        opoffset = f.f_lasti
+        byteCode = byteint(f.f_code.co_code[opoffset])
+        f.f_lasti += 1
+        byteName = dis.opname[byteCode]
+        arg = None
+        arguments = []
+        if byteCode >= dis.HAVE_ARGUMENT:
+            arg = f.f_code.co_code[f.f_lasti:f.f_lasti+2]
+            f.f_lasti += 2
+            intArg = byteint(arg[0]) + (byteint(arg[1]) << 8)
+            if byteCode in dis.hasconst:
+                arg = f.f_code.co_consts[intArg]
+            elif byteCode in dis.hasfree:
+                if intArg < len(f.f_code.co_cellvars):
+                    arg = f.f_code.co_cellvars[intArg]
+                else:
+                    var_idx = intArg - len(f.f_code.co_cellvars)
+                    arg = f.f_code.co_freevars[var_idx]
+            elif byteCode in dis.hasname:
+                arg = f.f_code.co_names[intArg]
+            elif byteCode in dis.hasjrel:
+                arg = f.f_lasti + intArg
+            elif byteCode in dis.hasjabs:
+                arg = intArg
+            elif byteCode in dis.haslocal:
+                arg = f.f_code.co_varnames[intArg]
+            else:
+                arg = intArg
+            arguments = [arg]
+
+        return byteName, arguments, opoffset
 
     def dispatch(self, byteName, arguments):
-        pass
+        """ Dispatch by bytename to the corresponding methods.
+        Exceptions are caught and set on the virtual machine."""
+        why = None
+        try:
+            if byteName.startswith('UNARY_'):
+                self.unaryOperator(byteName[6:])
+            elif byteName.startswith('BINARY_'):
+                self.binaryOperator(byteName[7:])
+            elif byteName.startswith('INPLACE_'):
+                self.inplaceOperator(byteName[8:])
+            elif 'SLICE+' in byteName:
+                self.sliceOperator(byteName)
+            else:
+                # dispatch
+                bytecode_fn = getattr(self, 'byte_%s' % byteName, None)
+                if not bytecode_fn:            # pragma: no cover
+                    raise VirtualMachineError(
+                        "unknown bytecode type: %s" % byteName
+                    )
+                why = bytecode_fn(*arguments)
+
+        except:
+            # deal with exceptions encountered while executing the op.
+            self.last_exception = sys.exc_info()[:2] + (None,)
+            log.exception("Caught exception during execution")
+            why = 'exception'
+
+        return why
 
     def run_code(self, code, global_names=None, local_names=None):
         """Run the code and check if there any frame left after the code runs"""
@@ -33,27 +102,29 @@ class VirtualMachine(object):
 
     # The following methods consist of frame manipulation and data stack manipulation
 
-    # basic manipulation
+    # Basic manipulation
 
     def top(self):
         """Return the value at the top of the stack"""
-        pass
+        return self.frame.stack.top()
 
     def pop(self, i=0):
         """Pop the ith value of the stack"""
-        pass
+        return self.frame.stack.pop(- i - 1)
 
     def popn(self, n):
         """Pop the top n values of the stack. Deepest first"""
-        pass
+        values = self.frame.stack[- n:]
+        self.frame.stack[- n:] = []
+        return values
 
     def push(self, *vals):
         """Push values into stack"""
-        pass
+        self.frame.stack.extend(list(vals))
 
     def peek(self, n):
         """Get the nth entry from the bottom of the stack"""
-        pass
+        return self.stack[n]
 
     def jump(self, jump):
         """Move the bytecode pointer to 'jump'"""
@@ -61,68 +132,99 @@ class VirtualMachine(object):
 
     # Stack manipulation
 
-    def byte_LOAD_CONST(self, const): #
-        pass
+    def byte_LOAD_CONST(self, const):
+        self.push(const)
 
     def byte_POP_TOP(self):
-        pass
+        self.pop()
 
     def byte_DUP_TOP(self):
         """Copy the top entry of the stack and push it into the stack"""
-        pass
+        self.push(self.top())
 
     def byte_DUP_TOPX(self, count):
         """Copy the top count entries of the stack and push them into the stack with the same order"""
-        pass
+        topx = self.popn(count)
+        self.push(*topx)
+        self.push(*topx)
 
     def byte_DUP_TOP_TWO(self):
-        pass
+        self.byte_DUP_TOPX(2)
 
     def byte_ROT_TWO(self):
         """Insert the top entry to the second place"""
-        pass
+        a, b = self.popn(2)
+        self.push(b, a)
 
     def byte_ROT_THREE(self):
         """Insert the top entry to the third place"""
-        pass
+        a, b, c = self.popn(3)
+        self.push(c, a, b)
 
     def byte_ROT_FOUR(self):
         """Insert the top entry to the fourth place"""
-        pass
+        a, b, c, d = self.popn(4)
+        self.push(d, a, b, c)
 
     # Names
 
-    def byte_LOAD_NAME(self, name): #
-        pass
+    def byte_LOAD_NAME(self, name):
+        """Push the value of the name into stack.
+        NameError raises when the name not defined."""
+        if name in self.frame.f_locals:
+            val = self.frame.f_locals[name]
+        elif name in self.frame.f_globals:
+            val = self.frame.f_globals[name]
+        elif name in self.frame.f_builtins:
+            val = self.frame.f_builtins[name]
+        else:
+            raise NameError("Name '{}' is not defined.".foramt(name))
+        self.push(val)
 
-    def byte_STORE_NAME(self, name): #
-        pass
+    def byte_STORE_NAME(self, name):
+        """Store the name to f_locals and give it a value from the top of stack"""
+        self.frame.f_locals[name] = self.pop()
 
     def byte_DELETE_NAME(self, name):
-        pass
+        """Delete a local name"""
+        del self.frame.f_locals[name]
 
-    def byte_LOAD_FAST(self, name): #
-        pass
+    def byte_LOAD_FAST(self, name):
+        """Load value of local variable to stack.
+        UnboundLocalError raises when local variable has not been assigned."""
+        if name in self.frame.f_locals:
+            self.push(self.frame.f_locals[name])
+        else:
+            raise UnboundLocalError("Local name '{}' referenced\
+                but not bound to a value.".format(name))
 
-    def byte_STORE_FAST(self, name): #
-        pass
+    def byte_STORE_FAST(self, name):
+        """Store name to f_locals and assign it."""
+        self.frame.f_locals[name] = self.pop()
 
     def byte_DELETE_FAST(self, name):
-        pass
+        """Delete this local variable"""
+        del self.frame.f_locals[name]
 
     def byte_LOAD_GLOBAL(self, name):
-        pass
+        """Local a global variable"""
+        if name in self.frame.f_globals[name]:
+            self.push(self.frame.f_globals[name])
 
     def byte_STORE_GLOBAL(self, name):
-        pass
+        """Store a global variable"""
+        self.frame.f_globals[name] = self.pop()
 
     def byte_LOAD_DEREF(self, name):
+        """Push the value getting from the cell"""
         pass
 
     def byte_STORE_DEREF(self, name):
+        """Store a value pop from stack to cell"""
         pass
 
     def byte_LOAD_LOCALS(self):
+        """Load f_locals"""
         pass
 
     # Operatiors(basically adopted from Byterun)
@@ -192,7 +294,25 @@ class VirtualMachine(object):
         self.push(x)
 
     def sliceOperator(self, op):
-        pass
+        start = 0
+        end = None
+        op, count = op[:-2], int(op[-1])
+        if count == 1:
+            start = self.pop()
+        elif count == 2:
+            end = self.pop()
+        elif count == 3:
+            end = self.pop()
+            start = self.pop()
+        l = self.pop()
+        if end is None:
+            end = len(l)
+        if op.startswith('STORE_'):
+            l[start:end] = self.pop()
+        elif op.startswith('DELETE_'):
+            del l[start:end]
+        else:
+            self.push(l[start:end])
 
     COMPARE_OPERATORS = [
         operator.lt,
@@ -224,33 +344,39 @@ class VirtualMachine(object):
         pass
 
     def byte_STORE_SUBSCR(self):
-        pass
+        """TOS1[TOS] = TOS2"""
+        TOS2, TOS1, TOS = self.popn(3)
+        TOS1[TOS] = TOS2
+        self.push(TOS1)
 
     def byte_DELETE_SUBSCR(self):
-        pass
+        """delete TOS1[TOS]"""
+        TOS1, TOS = self.popn(2)
+        del TOS1[TOS]
 
     # Building
 
     def byte_BUILD_TUPLE(self, count):
         """Using the top 'count' data to build a tuple"""
-        pass
+        self.push(tuple(self.popn(count)))
 
     def byte_BUILD_LIST(self, count):
         """Using the top 'count' data to build a list"""
-        pass
+        self.push(list(self.popn(count)))
 
     def byte_BUILD_SET(self, count):
         """Using the top 'count' data to build a set"""
-        pass
+        self.push(set(self.pop(count)))
 
     def byte_BUILD_MAP(self, size):
         """Build an empty map, size is ignored"""
-        pass
+        self.push({})
 
     def byte_STORE_MAP(self):
-        """While the map is on the top of stack, pop it and add
-        a pair of key and value"""
-        pass
+        """Store a pair of key and value"""
+        Map, value, key = self.popn(3)
+        Map[key] = value
+        self.push(Map)
 
     def byte_UNPACK_SEQUENCE(self, count):
         """Unpack a sequence from the stack top, and push all the entries into the stack"""

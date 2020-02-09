@@ -10,12 +10,6 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 1. It can execute simple arithmetical and logical operations
 2. It can run conditional statements and loops
 
-## Stages
-
-1. Building parts of Read, Print separately  
-2. Building the frame of Read-Eval-Print Loop(REPL)  
-3. Improving the Eval part
-
 ## Experiments
 
 To be continued...
@@ -25,6 +19,7 @@ To be continued...
 | Date  |           Progress           |
 | :---: | :--------------------------: |
 | Feb 6 | Begin building the structure |
+| Feb 7 |  Begin writing the VM class  |
 
 ## Acknowledgement
 
