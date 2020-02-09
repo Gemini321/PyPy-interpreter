@@ -16,10 +16,11 @@ To be continued...
 
 ## Progress
 
-| Date  |           Progress           |
-| :---: | :--------------------------: |
-| Feb 6 | Begin building the structure |
-| Feb 7 |  Begin writing the VM class  |
+|  Date  |             Progress              |
+| :----: | :-------------------------------: |
+| Feb 6  |   Begin building the structure    |
+| Feb 7  | Begin writing bytecode operations |
+| Feb 10 |    Begin writing the VM class     |
 
 ## Acknowledgement
 
