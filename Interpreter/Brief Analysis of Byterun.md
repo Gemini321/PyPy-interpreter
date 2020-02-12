@@ -47,6 +47,7 @@ variables:
   * f_lineno: the first line in Python source code
   * f_lasti: bytecode pointer
   * f_back.cells: cells
+  * block_stack
 
 methods:
   * \_\_init\_\_: Initialize code, globals and locals, back, block_stack, cell, builtins.

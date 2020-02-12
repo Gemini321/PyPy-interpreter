@@ -4,11 +4,15 @@
 are adopted from Byterun, Allison Kaptur and Ned Batchelder, licensed by MIT License"""
 
 from __future__ import print_function, division
+from .pyobj import Frame, Block
 import dis
 import linecache
-import logging
 import operator
 import sys
+
+
+def byteint(b):
+    return b
 
 
 class VirtualMachineError(Exception):
@@ -91,7 +95,6 @@ class VirtualMachine(object):
         except:
             # deal with exceptions encountered while executing the op.
             self.last_exception = sys.exc_info()[:2] + (None,)
-            log.exception("Caught exception during execution")
             why = 'exception'
 
         return why
@@ -128,6 +131,19 @@ class VirtualMachine(object):
 
     def jump(self, jump):
         """Move the bytecode pointer to 'jump'"""
+        self.frame.f_lasti = jump
+
+    # Block manipulation
+
+    def push_block(self, type, handler=None, level=None):
+        if level is None:
+            level = len(self.frame.stack)
+        self.frame.block_stack.append(Block(type, handler, level))
+
+    def pop_block(self):
+        return self.frame.block_stack.pop()
+
+    def manage_block_stack(self, why):
         pass
 
     # Stack manipulation
@@ -380,23 +396,36 @@ class VirtualMachine(object):
 
     def byte_UNPACK_SEQUENCE(self, count):
         """Unpack a sequence from the stack top, and push all the entries into the stack"""
-        pass
+        seq = self.pop()
+        for x in reversed(seq):
+            self.push(x)
 
     def byte_BUILD_SLICE(self, count):
-        """Build a slice with 'count' number of entries"""
-        pass
+        """Build a slice with 'count' number of entries(count == 2/3)"""
+        if count == 2:
+            x, y = self.popn(2)
+            self.push(slice(x, y))
+        elif count == 3:
+            x, y, z = self.popn(3)
+            self.push(slice(x, y, z))
+        else:
+            raise VirtualMachineError("Strange BUILD_SLICE count {}.".format(count))
 
     def byte_LIST_APPEND(self, count):
         """Append the value at the top of the stack to a list from self.peek(count)"""
-        pass
+        the_list = self.peek(count)
+        the_list.append(self.pop())
 
     def byte_SET_ADD(self, count):
         """Add the value at the top of the stack to a set from self.peek(count)"""
-        pass
+        the_set = self.peek(count)
+        the_set.add(self.pop())
 
     def byte_MAP_ADD(self, count):
-        """Add the value at the top of the stack to a map from self.peek(count)"""
-        pass
+        """Add the key and value at the top of the stack to a map from self.peek(count)"""
+        val, key = self.popn(2)
+        the_map = self.peek(count)
+        the_map[key] = val
 
     # Jumps
 
@@ -408,17 +437,29 @@ class VirtualMachine(object):
 
     def byte_POP_JUMP_IF_TRUE(self, jump):
         """If the value at the top of the stack is true, jump to 'jump'"""
-        pass
+        val = self.pop()
+        if val:
+            self.jump(jump)
 
     def byte_POP_JUMP_IF_FALSE(self, jump):
-        pass
+        val = self.pop()
+        if not val:
+            self.jump(jump)
 
     def byte_JUMP_IF_TRUE_OR_POP(self, jump):
         """If the value at the top of the stack is true, jump; Or pop it"""
-        pass
+        val = self.top()
+        if val:
+            self.jump(jump)
+        else:
+            self.pop()
 
     def byte_JUMP_IF_FALSE_OR_POP(self, jump):
-        pass
+        val = self.pop()
+        if not val:
+            self.jump(jump)
+        else:
+            self.pop()
 
     # Blocks
 
@@ -428,11 +469,17 @@ class VirtualMachine(object):
 
     def byte_GET_ITER(self):
         """Make the top value as a lterator"""
-        pass
+        self.push(iter(self.pop()))
 
     def byte_FOR_ITER(self, jump):
         """Get the next entry of a lterator and push it into the stack(if possible)"""
-        pass
+        iterobj = self.top()
+        try:
+            v = next(iterobj)
+            self.push(v)
+        except StopIteration:
+            self.pop()
+            self.jump(jump)
 
     def byte_BREAK_LOOP(self):
         return 'break'
@@ -451,7 +498,7 @@ class VirtualMachine(object):
         pass
 
     def byte_POP_BLOCK(self):
-        pass
+        self.pop_blolck()
 
     # Raise
 
@@ -466,3 +513,14 @@ class VirtualMachine(object):
         pass
 
     # Functions(left out)
+
+    def byte_CALL_FUNCTION(self):
+        func = self.pop(1)
+        if func == "print":
+            print(self.pop())
+        else:
+            raise VirtualMachineError("CALL_FUNCTION ERROR.")
+
+    def byte_RETURN_VALUE(self):
+        self.return_value = self.pop()
+        return "return"
