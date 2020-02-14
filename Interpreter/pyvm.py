@@ -26,13 +26,55 @@ class VirtualMachine(object):
         self.frames = []
         # The current frame
         self.frame = None
+        self.return_value = None
+        self.last_exception = None
 
     def make_frame(self, code, callargs={}, global_names=None, local_names=None):
-        """Focus on the global_names and local_names"""
-        pass
+        """Focus on the global_names and local_names.
+        Since we have only one frame, so globals and locals are None,
+        and the last frame is None, too."""
+        f_globals = f_locals = {
+            "__builtins__": __builtins__,
+            "__name__": "__main__",
+            "__doc__": None,
+            "__package__": None,
+        }
+        f_back = self.frame
+        frame = Frame(code, global_names, local_names, f_back)
+        return frame
 
     def run_frame(self, frame):
-        pass
+        """Run a frame until it returns and return the self.return_value."""
+        self.push_frame(frame)
+
+        # Run the code
+        while True:
+            byteName, arguments, opoffset = self.parse_byte_and_args()
+            why = self.dispatch(byteName, arguments)
+
+            # Deal with why
+            if why == "exception":
+                pass
+            elif why == "yield":
+                break
+            else:
+                while why and self.frame.block_stack:
+                    why = self.manage_block_stack(why)
+
+        self.pop_frame()
+        if why == "exception":
+            raise VirtualMachineError("Code running error.")
+        return self.return_value
+
+    def push_frame(self, frame):
+        """Push frame, and update the current frame."""
+        self.frames.append(frame)
+        self.frame = frame
+
+    def pop_frame(self):
+        """Pop frame, and update the current frame."""
+        frame = self.frames.pop()
+        self.frame = frame
 
     def parse_byte_and_args(self):
         """ Parse 1 - 3 bytes of bytecode into
@@ -100,8 +142,19 @@ class VirtualMachine(object):
         return why
 
     def run_code(self, code, global_names=None, local_names=None):
-        """Run the code and check if there any frame left after the code runs"""
-        pass
+        """Make a new frame, run the code and check if there is any frame left after the code runs"""
+        frame = self.make_frame(code, global_names=global_names, local_names=local_names)
+        return_val = self.run_frame(frame)
+
+        # If there is any frame left after running the program
+        if self.frames:
+            raise VirtualMachineError("There are frames left over the frame stack!")
+
+        # If there is any data left in the data stack in the current stack
+        if self.frame and self.frame.stack:
+            raise VirtualMachineError("There is data left over the data stack!")
+
+        return return_val
 
     # The following methods consist of frame manipulation and data stack manipulation
 
@@ -144,7 +197,15 @@ class VirtualMachine(object):
         return self.frame.block_stack.pop()
 
     def manage_block_stack(self, why):
-        pass
+        block = self.frmae.block_stack[-1]
+        self.pop_block()
+        if block.type == "loop" and why == "continue":
+            self.jump(self.return_value)
+            why = None
+        if block.type == "loop" and why == "break":
+            why = None
+            self.jump(block.handler)
+        return why
 
     # Stack manipulation
 
@@ -250,7 +311,7 @@ class VirtualMachine(object):
         'NEGATIVE': operator.neg,
         'NOT':      operator.not_,
         'CONVERT':  repr,
-        'INVEERT':  opeartor.invert,
+        'INVEERT':  operator.invert,
     }
 
     def unaryOperator(self, op):
@@ -465,7 +526,7 @@ class VirtualMachine(object):
 
     def byte_SETUP_LOOP(self, dest):
         """Setup the state of loop, including the dest of this loop"""
-        pass
+        self.push_block("loop", dest)
 
     def byte_GET_ITER(self):
         """Make the top value as a lterator"""
@@ -519,7 +580,7 @@ class VirtualMachine(object):
         if func == "print":
             print(self.pop())
         else:
-            raise VirtualMachineError("CALL_FUNCTION ERROR.")
+            raise VirtualMachineError("CALL_FUNCTION error.")
 
     def byte_RETURN_VALUE(self):
         self.return_value = self.pop()

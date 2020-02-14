@@ -16,7 +16,7 @@ class Frame(object):
         self.f_back = f_back
         self.stack = []
         self.block_stack = []
-        pass
+        self.f_lasti = 0
 
 
 """
