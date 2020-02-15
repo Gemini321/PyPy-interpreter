@@ -18,6 +18,15 @@ class Frame(object):
         self.block_stack = []
         self.f_lasti = 0
 
+        # Builtins
+        try:
+            self.f_builtins = f_globals["__builtins__"]
+            if hasattr(self.f_builtins, "__dict__"):
+                self.f_builtins = self.f_builtins.__dict__
+        except KeyError:
+            # No builtins
+            self.f_builtins = {"None": None}
+
 
 """
 

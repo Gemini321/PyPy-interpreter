@@ -55,7 +55,7 @@ class VirtualMachine(object):
             # Deal with why
             if why == "exception":
                 pass
-            elif why == "yield":
+            elif why == "yield" or why == "return":
                 break
             else:
                 while why and self.frame.block_stack:
@@ -87,9 +87,9 @@ class VirtualMachine(object):
         arg = None
         arguments = []
         if byteCode >= dis.HAVE_ARGUMENT:
-            arg = f.f_code.co_code[f.f_lasti:f.f_lasti+2]
-            f.f_lasti += 2
-            intArg = byteint(arg[0]) + (byteint(arg[1]) << 8)
+            arg = f.f_code.co_code[f.f_lasti:f.f_lasti+1]
+            f.f_lasti += 1
+            intArg = byteint(arg[0])
             if byteCode in dis.hasconst:
                 arg = f.f_code.co_consts[intArg]
             elif byteCode in dis.hasfree:
@@ -575,10 +575,11 @@ class VirtualMachine(object):
 
     # Functions(left out)
 
-    def byte_CALL_FUNCTION(self):
+    def byte_CALL_FUNCTION(self, arg):
         func = self.pop(1)
-        if func == "print":
+        if func == print:
             print(self.pop())
+            self.pop()
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 

@@ -22,7 +22,7 @@ To be continued...
 | Feb 7  |    Begin writing bytecode operations    |
 | Feb 10 |       Begin writing the VM class        |
 | Feb 13 | Begin writing the block and frame class |
-| Feb 15 |             begin debugging             |
+| Feb 15 |             Begin debugging             |
 
 ## Acknowledgement
 
