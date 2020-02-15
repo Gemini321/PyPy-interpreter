@@ -164,7 +164,7 @@ class VirtualMachine(object):
 
     def top(self):
         """Return the value at the top of the stack"""
-        return self.frame.stack.top()
+        return self.frame.stack[-1]
 
     def pop(self, i=0):
         """Pop the ith value of the stack"""
