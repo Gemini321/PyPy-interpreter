@@ -176,7 +176,7 @@ class VirtualMachine(object):
 
     def push(self, *vals):
         """Push values into stack"""
-        self.frame.stack.extend(list(vals))
+        self.frame.stack.extend(vals)
 
     def peek(self, n):
         """Get the nth entry from the bottom of the stack"""
@@ -578,8 +578,10 @@ class VirtualMachine(object):
     def byte_CALL_FUNCTION(self, arg):
         func = self.pop(1)
         if func == print:
-            print(self.pop())
-            self.pop()
+            """Since POP_TOP always follows CALL_FUNCTION(print),
+            we need not pop top interactively."""
+            output = self.top()
+            print(output)
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 

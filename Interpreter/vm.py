@@ -178,7 +178,7 @@ class VirtualMachine(object):
 
     def push(self, *vals):
         """Push values into stack"""
-        self.frame.stack.extend(list(vals))
+        self.frame.stack.extend(vals)
 
     def peek(self, n):
         """Get the nth entry from the bottom of the stack"""
@@ -215,7 +215,10 @@ class VirtualMachine(object):
         self.push(const)
 
     def byte_POP_TOP(self):
-        self.pop()
+        if self.top() == None:
+            raise VirtualMachineError("No entry to be pop at the top.")
+        else:
+            self.pop()
 
     def byte_DUP_TOP(self):
         """Copy the top entry of the stack and push it into the stack"""
@@ -580,8 +583,8 @@ class VirtualMachine(object):
     def byte_CALL_FUNCTION(self, arg):
         func = self.pop(1)
         if func == print:
-            print(self.pop())
-            self.pop()
+            output = self.top()
+            print(output)
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 
