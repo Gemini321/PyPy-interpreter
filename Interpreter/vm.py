@@ -578,15 +578,22 @@ class VirtualMachine(object):
     def byte_POP_EXCEPT(self):
         pass
 
-    # Functions(left out)
+    # Functions
 
     def byte_CALL_FUNCTION(self, arg):
+        if self.top() == input:
+            self.pop()
+            self.push(input())
+            return
         func = self.pop(1)
         if func == print:
             output = self.top()
             print(output)
         elif func == range:
             self.push(range(self.pop()))
+        elif func == input:
+            output = self.pop()
+            self.push(input(output))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 
