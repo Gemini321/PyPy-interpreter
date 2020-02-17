@@ -1,14 +1,14 @@
+from __future__ import print_function, division
+from .pyobj import Frame, Block
+import dis
+import operator
+import sys
+
+
 """The Virtual Machine of the interpreter"""
 
 """Acknowledgement: methods of parse_bytes_and__args, dispatch, operatiors and some details
 are adopted from Byterun, Allison Kaptur and Ned Batchelder, licensed by MIT License"""
-
-from __future__ import print_function, division
-from .pyobj import Frame, Block
-import dis
-import linecache
-import operator
-import sys
 
 
 def byteint(b):
@@ -33,7 +33,7 @@ class VirtualMachine(object):
         """Focus on the global_names and local_names.
         Since we have only one frame, so globals and locals are None,
         and the last frame is None, too."""
-        f_globals = f_locals = {
+        global_names = local_names = {
             "__builtins__": __builtins__,
             "__name__": "__main__",
             "__doc__": None,
@@ -576,6 +576,7 @@ class VirtualMachine(object):
     # Functions
 
     def byte_CALL_FUNCTION(self, arg):
+        """Only support input(), print(), range() function."""
         if self.top() == input:
             """When input() is called."""
             self.pop()
