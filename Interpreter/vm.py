@@ -585,6 +585,8 @@ class VirtualMachine(object):
         if func == print:
             output = self.top()
             print(output)
+        elif func == range:
+            self.push(range(self.pop()))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 

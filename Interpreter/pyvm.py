@@ -582,6 +582,9 @@ class VirtualMachine(object):
             we need not pop top interactively."""
             output = self.top()
             print(output)
+        elif func == range:
+            """Use the top value to creat a range and push."""
+            self.push(range(self.pop()))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 
