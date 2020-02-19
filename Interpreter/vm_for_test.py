@@ -340,7 +340,7 @@ class VirtualMachine(object):
         'OR':       operator.or_,
     }
 
-    def biniaryOperator(self, op):
+    def binaryOperator(self, op):
         x, y = self.popn(2)
         self.push(self.BINARY_OPERATORS[op](x, y))
 
@@ -594,6 +594,9 @@ class VirtualMachine(object):
         elif func == input:
             output = self.pop()
             self.push(input(output))
+        elif func == eval:
+            top = self.pop()
+            self.push(eval(top))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
 

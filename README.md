@@ -9,6 +9,7 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 
 1. It can execute simple arithmetical and logical operations
 2. It can run conditional statements and loops
+3. Only print(), range(), input() functions are supported
 
 ## Experiments
 
@@ -23,6 +24,7 @@ To be continued...
 | Feb 10 |       Begin writing the VM class        |
 | Feb 13 | Begin writing the block and frame class |
 | Feb 15 |             Begin debugging             |
+| Feb 18 |        Preparing the experiments        |
 
 ## Acknowledgement
 
