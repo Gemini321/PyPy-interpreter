@@ -9,7 +9,7 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 
 1. It can execute simple arithmetical and logical operations
 2. It can run conditional statements and loops
-3. Only print(), range(), input() functions are supported
+3. Only print(..., (end=...)), range(), input() functions are supported(only one or two strings or variables can be printed for one time)
 
 ## Experiments
 

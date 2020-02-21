@@ -412,13 +412,19 @@ class VirtualMachine(object):
     # Attributes and indexing
 
     def byte_LOAD_ATTR(self, attr):
-        pass
+        """Find an attribute and push it"""
+        obj = self.pop()
+        val = getattr(obj, attr)
+        self.push(val)
 
     def byte_STORE_ATTR(self, name):
-        pass
+        """Set a new attribute"""
+        val, obj = self.popn(2)
+        setattr(obj, name, val)
 
     def byte_DELETE_ATTR(self, name):
-        pass
+        obj = self.pop()
+        delattr(obj, name)
 
     def byte_STORE_SUBSCR(self):
         """TOS1[TOS] = TOS2"""
@@ -577,6 +583,14 @@ class VirtualMachine(object):
 
     def byte_CALL_FUNCTION(self, arg):
         """Only support input(), print(), range() function."""
+        if arg == 2:
+            if self.pop(2) == print:
+                second = self.pop()
+                first = self.pop()
+                print(first, second)
+            else:
+                raise VirtualMachineError("except CALL_FUNCTION for two arguments.")
+            return
         if self.top() == input:
             """When input() is called."""
             self.pop()
@@ -600,6 +614,14 @@ class VirtualMachine(object):
             self.push(eval(top))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
+
+    def byte_CALL_FUNCTION_KW(self, arg):
+        """Just created for print("...", end='')"""
+        kwarg = self.pop()
+        if self.pop(2) == print and kwarg == ('end',):
+            print_end = self.pop()
+            print_first = self.pop()
+            print(print_first, end=print_end)
 
     def byte_RETURN_VALUE(self):
         self.return_value = self.pop()

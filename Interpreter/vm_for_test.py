@@ -417,13 +417,19 @@ class VirtualMachine(object):
     # Attributes and indexing
 
     def byte_LOAD_ATTR(self, attr):
-        pass
+        """Find an attribute and push it"""
+        obj = self.pop()
+        val = getattr(obj, attr)
+        self.push(val)
 
     def byte_STORE_ATTR(self, name):
-        pass
+        """Set a new attribute"""
+        val, obj = self.popn(2)
+        setattr(obj, name, val)
 
     def byte_DELETE_ATTR(self, name):
-        pass
+        obj = self.pop()
+        delattr(obj, name)
 
     def byte_STORE_SUBSCR(self):
         """TOS1[TOS] = TOS2"""
@@ -581,6 +587,14 @@ class VirtualMachine(object):
     # Functions
 
     def byte_CALL_FUNCTION(self, arg):
+        if arg == 2:
+            if self.pop(2) == print:
+                second = self.pop()
+                first = self.pop()
+                print(first, second)
+            else:
+                raise VirtualMachineError("except CALL_FUNCTION for two arguments.")
+            return
         if self.top() == input:
             self.pop()
             self.push(input())
@@ -599,6 +613,14 @@ class VirtualMachine(object):
             self.push(eval(top))
         else:
             raise VirtualMachineError("CALL_FUNCTION error.")
+
+    def byte_CALL_FUNCTION_KW(self, arg):
+        """Just created for print("...", end='')"""
+        kwarg = self.pop()
+        if self.pop(2) == print and kwarg == ('end',):
+            print_end = self.pop()
+            print_first = self.pop()
+            print(print_first, end=print_end)
 
     def byte_RETURN_VALUE(self):
         self.return_value = self.pop()
@@ -658,21 +680,5 @@ def get_start():
     code = get_code_object()
     run_python_file(code)
 
-get_start()
 
-"""
-Traceback (most recent call last):
-  File "vm.py", line 635, in <module>
-    get_start()
-  File "vm.py", line 633, in get_start
-    run_python_file(code)
-  File "vm.py", line 618, in run_python_file
-    vm.run_code(code)
-  File "vm.py", line 148, in run_code
-    return_val = self.run_frame(frame)
-  File "vm.py", line 53, in run_frame
-    byteName, arguments, opoffset = self.parse_byte_and_args()
-  File "vm.py", line 95, in parse_byte_and_args
-    arg = f.f_code.co_consts[intArg]
-IndexError: tuple index out of range
-"""
+get_start()
