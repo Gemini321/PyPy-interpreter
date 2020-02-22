@@ -13,7 +13,16 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 
 ## Experiments
 
-To be continued...
+The experiments consist of eight parts.  
+
+1. simple add, simple substract, simple multipy, simple divide: the default value are '123' and '456',
+and testers can enter two value that you want to calculate.
+2. if_statement: calculate the absolute value of the difference value of two value.
+3. fibonacci_loop: print the 'n'th fibonacci value.
+4. sum_up: sum up from '1' to 'n' that you enter.
+5. combine_strings: print the combination of two strings with a space between strings.
+
+Just type "make test" to begin the test. If you want to test your program, please type "python \_\_main\_\_.py xxx.py".
 
 ## Progress
 
