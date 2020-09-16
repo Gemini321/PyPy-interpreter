@@ -11,9 +11,9 @@ PyPy to achieve. The final goal of this project is providing a simple Python int
 2. It can run conditional statements and loops
 3. Only print(..., (end=...)), range(), input() functions are supported(only one or two strings or variables can be printed for one time)
 
-## Experiments
+## Tests
 
-The experiments consist of eight parts.  
+The tests consist of eight parts.  
 
 1. simple add, simple substract, simple multipy, simple divide: the default value are '123' and '456',
 and testers can enter two value that you want to calculate.
@@ -22,7 +22,7 @@ and testers can enter two value that you want to calculate.
 4. sum_up: sum up from '1' to 'n' that you enter.
 5. combine_strings: print the combination of two strings with a space between strings.
 
-Just type "make test" to begin the test. If you want to test your program, please type "python \_\_main\_\_.py xxx.py".
+Just type "make test" to begin the tests. If you want to test your program, please type "python \_\_main\_\_.py xxx.py".
 
 ## Progress
 
@@ -34,6 +34,7 @@ Just type "make test" to begin the test. If you want to test your program, pleas
 | Feb 13 | Begin writing the block and frame class |
 | Feb 15 |             Begin debugging             |
 | Feb 18 |        Preparing the experiments        |
+| Feb 25 |   Writing the technical documentation   |
 
 ## Acknowledgement
 
